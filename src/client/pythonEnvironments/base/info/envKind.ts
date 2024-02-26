@@ -59,7 +59,7 @@ export function getKindDisplayName(kind: PythonEnvKind): string {
 export function getPrioritizedEnvKinds(): PythonEnvKind[] {
     return [
         PythonEnvKind.Pyenv,
-        PythonEnvKind.Pixi,
+        PythonEnvKind.Pixi, // Placed here since Pixi environments are essentially Conda envs
         PythonEnvKind.Conda,
         PythonEnvKind.MicrosoftStore,
         PythonEnvKind.Pipenv,
