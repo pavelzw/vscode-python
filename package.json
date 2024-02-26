@@ -652,6 +652,12 @@
                     "scope": "machine-overridable",
                     "type": "string"
                 },
+                "python.pixiPath": {
+                    "default": "pixi",
+                    "description": "%python.pixiPath.description%",
+                    "scope": "machine-overridable",
+                    "type": "string"
+                },
                 "python.tensorBoard.logDirectory": {
                     "default": "",
                     "description": "%python.tensorBoard.logDirectory.description%",

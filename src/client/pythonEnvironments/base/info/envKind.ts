@@ -15,6 +15,7 @@ export function getKindDisplayName(kind: PythonEnvKind): string {
         [PythonEnvKind.MicrosoftStore, 'Microsoft Store'],
         [PythonEnvKind.Pyenv, 'pyenv'],
         [PythonEnvKind.Poetry, 'Poetry'],
+        [PythonEnvKind.Pixi, 'Pixi'],
         [PythonEnvKind.Custom, 'custom'],
         // For now we treat OtherGlobal like Unknown.
         [PythonEnvKind.Venv, 'venv'],
@@ -45,6 +46,7 @@ export function getKindDisplayName(kind: PythonEnvKind): string {
  *  3. PipEnv
  *  4. Pyenv
  *  5. Poetry
+ *  6. Pixi
  *
  * Next level we have the following virtual environment tools. The are here because they
  * are consumed by the tools above, and can also be used independently.
@@ -57,6 +59,7 @@ export function getKindDisplayName(kind: PythonEnvKind): string {
 export function getPrioritizedEnvKinds(): PythonEnvKind[] {
     return [
         PythonEnvKind.Pyenv,
+        PythonEnvKind.Pixi,
         PythonEnvKind.Conda,
         PythonEnvKind.MicrosoftStore,
         PythonEnvKind.Pipenv,

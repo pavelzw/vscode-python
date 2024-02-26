@@ -15,6 +15,7 @@ export enum PythonEnvKind {
     MicrosoftStore = 'global-microsoft-store',
     Pyenv = 'global-pyenv',
     Poetry = 'poetry',
+    Pixi = 'pixi',
     ActiveState = 'activestate',
     Custom = 'global-custom',
     OtherGlobal = 'global-other',
@@ -44,6 +45,7 @@ export interface EnvPathType {
 
 export const virtualEnvKinds = [
     PythonEnvKind.Poetry,
+    PythonEnvKind.Pixi,
     PythonEnvKind.Pipenv,
     PythonEnvKind.Venv,
     PythonEnvKind.VirtualEnvWrapper,
