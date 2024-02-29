@@ -83,7 +83,7 @@ suite('Python Settings', async () => {
             'pipenvPath',
             'envFile',
             'poetryPath',
-            'pixiPath',
+            'pixiToolPath',
             'defaultInterpreterPath',
         ]) {
             config
@@ -142,7 +142,7 @@ suite('Python Settings', async () => {
             'pipenvPath',
             'envFile',
             'poetryPath',
-            'pixiPath',
+            'pixiToolPath',
             'defaultInterpreterPath',
         ].forEach(async (settingName) => {
             testIfValueIsUpdated(settingName, 'stringValue');

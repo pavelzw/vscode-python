@@ -652,9 +652,9 @@
                     "scope": "machine-overridable",
                     "type": "string"
                 },
-                "python.pixiPath": {
+                "python.pixiToolPath": {
                     "default": "pixi",
-                    "description": "%python.pixiPath.description%",
+                    "description": "%python.pixiToolPath.description%",
                     "scope": "machine-overridable",
                     "type": "string"
                 },

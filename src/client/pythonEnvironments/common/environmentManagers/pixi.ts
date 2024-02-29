@@ -109,10 +109,10 @@ export class Pixi {
         function* getCandidates() {
             // Read the pixi location from the settings.
             try {
-                const customPixiPath = getPythonSetting<string>('pixiPath');
-                if (customPixiPath && customPixiPath !== 'pixi') {
+                const custompixiToolPath = getPythonSetting<string>('pixiToolPath');
+                if (custompixiToolPath && custompixiToolPath !== 'pixi') {
                     // If user has specified a custom pixi path, use it first.
-                    yield customPixiPath;
+                    yield custompixiToolPath;
                 }
             } catch (ex) {
                 traceError(`Failed to get pixi setting`, ex);
@@ -124,23 +124,23 @@ export class Pixi {
             // Check the default installation location
             const home = getUserHomeDir();
             if (home) {
-                const defaultPixiPath = path.join(home, '.pixi', 'bin', 'pixi');
-                if (pathExistsSync(defaultPixiPath)) {
-                    yield defaultPixiPath;
+                const defaultpixiToolPath = path.join(home, '.pixi', 'bin', 'pixi');
+                if (pathExistsSync(defaultpixiToolPath)) {
+                    yield defaultpixiToolPath;
                 }
             }
         }
 
         // Probe the candidates, and pick the first one that exists and does what we need.
-        for (const pixiPath of getCandidates()) {
-            traceVerbose(`Probing pixi binary for ${cwd}: ${pixiPath}`);
-            const pixi = new Pixi(pixiPath, cwd);
+        for (const pixiToolPath of getCandidates()) {
+            traceVerbose(`Probing pixi binary for ${cwd}: ${pixiToolPath}`);
+            const pixi = new Pixi(pixiToolPath, cwd);
             const virtualenvs = await pixi.getEnvList();
             if (virtualenvs !== undefined) {
-                traceVerbose(`Found pixi via filesystem probing for ${cwd}: ${pixiPath}`);
+                traceVerbose(`Found pixi via filesystem probing for ${cwd}: ${pixiToolPath}`);
                 return pixi;
             }
-            traceVerbose(`Failed to find pixi for ${cwd}: ${pixiPath}`);
+            traceVerbose(`Failed to find pixi for ${cwd}: ${pixiToolPath}`);
         }
 
         // Didn't find anything.

@@ -103,7 +103,7 @@ export class PythonSettings implements IPythonSettings {
 
     public poetryPath = '';
 
-    public pixiPath = '';
+    public pixiToolPath = '';
 
     public devOptions: string[] = [];
 
@@ -262,8 +262,9 @@ export class PythonSettings implements IPythonSettings {
         this.pipenvPath = pipenvPath && pipenvPath.length > 0 ? getAbsolutePath(pipenvPath, workspaceRoot) : pipenvPath;
         const poetryPath = systemVariables.resolveAny(pythonSettings.get<string>('poetryPath'))!;
         this.poetryPath = poetryPath && poetryPath.length > 0 ? getAbsolutePath(poetryPath, workspaceRoot) : poetryPath;
-        const pixiPath = systemVariables.resolveAny(pythonSettings.get<string>('pixiPath'))!;
-        this.pixiPath = pixiPath && pixiPath.length > 0 ? getAbsolutePath(pixiPath, workspaceRoot) : pixiPath;
+        const pixiToolPath = systemVariables.resolveAny(pythonSettings.get<string>('pixiToolPath'))!;
+        this.pixiToolPath =
+            pixiToolPath && pixiToolPath.length > 0 ? getAbsolutePath(pixiToolPath, workspaceRoot) : pixiToolPath;
 
         this.interpreter = pythonSettings.get<IInterpreterSettings>('interpreter') ?? {
             infoVisibility: 'onPythonRelated',
