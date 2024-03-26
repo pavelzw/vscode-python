@@ -5,10 +5,11 @@
 
 import * as path from 'path';
 import { OSType, getOSType, getUserHomeDir } from '../../../common/utils/platform';
-import { exec, getPythonSetting, pathExists, pathExistsSync } from '../externalDependencies';
+import { exec, getPythonSetting, isParentPath, pathExists, pathExistsSync } from '../externalDependencies';
 import { cache } from '../../../common/utils/decorators';
 import { isTestExecution } from '../../../common/constants';
 import { traceError, traceVerbose } from '../../../logging';
+import { OUTPUT_MARKER_SCRIPT } from '../../../common/process/internal/scripts';
 
 // This type corresponds to the output of 'pixi info --json', and property
 // names must be spelled exactly as they are in order to match the schema.
@@ -40,6 +41,19 @@ export type PixiInfo = {
 };
 
 export async function isPixiEnvironment(interpreterPath: string): Promise<boolean> {
+    const projectDir = getPixiProjectFolderFromInterpreter(interpreterPath);
+    const pixiTomlPath = path.join(projectDir, 'pixi.toml');
+    return pathExists(pixiTomlPath);
+}
+
+/**
+ * Returns the path to the project directory based on the interpreter path.
+ *
+ * This function does not check if the path actually exists.
+ *
+ * @param interpreterPath The path to the interpreter
+ */
+export function getPixiProjectFolderFromInterpreter(interpreterPath: string): string {
     // We want to verify the following layout
     // project
     // |__ pixi.toml                    <-- check if this exists
@@ -53,8 +67,8 @@ export async function isPixiEnvironment(interpreterPath: string): Promise<boolea
     const envsDir = path.dirname(envDir);
     const pixiDir = path.dirname(envsDir);
     const projectDir = path.dirname(pixiDir);
-    const pixiTomlPath = path.join(projectDir, 'pixi.toml');
-    return pathExists(pixiTomlPath);
+
+    return projectDir;
 }
 
 /**
@@ -169,8 +183,8 @@ export class Pixi {
     private async getEnvListCached(_cwd: string): Promise<string[] | undefined> {
         const infoOutput = await exec(this.command, ['info', '--json'], {
             cwd: this.cwd,
-            throwOnStdErr: true,
-        }).catch(traceVerbose);
+            throwOnStdErr: false,
+        }).catch(traceError);
         if (!infoOutput) {
             return undefined;
         }
@@ -178,4 +192,73 @@ export class Pixi {
         const pixiInfo: PixiInfo = JSON.parse(infoOutput.stdout);
         return pixiInfo.environments_info.map((env) => env.prefix);
     }
+
+    public getRunPythonArgs(manifestPath: string, envName?: string, isolatedFlag = false): string[] {
+        let python = [this.command, 'run', '--manifest-path', manifestPath];
+        if (isNonDefaultPixiEnvironmentName(envName)) {
+            python = python.concat(['--environment', envName]);
+        }
+
+        python.push('python');
+        if (isolatedFlag) {
+            python.push('-I');
+        }
+        return [...python, OUTPUT_MARKER_SCRIPT];
+    }
+}
+
+/**
+ * Returns true if interpreter path belongs to a pixi environment which is associated with a particular folder,
+ * false otherwise.
+ *
+ * @param interpreterPath Absolute path to any python interpreter.
+ * @param folder Absolute path to the folder.
+ * @param poetryPath Poetry command to use to calculate the result.
+ */
+export async function isPixiEnvironmentRelatedToFolder(interpreterPath: string, folder: string): Promise<boolean> {
+    const projectPath = getPixiProjectFolderFromInterpreter(interpreterPath);
+    return isParentPath(folder, projectPath);
+}
+
+export type PixiEnvironmentInfo = {
+    interpreterPath: string;
+    pixi: Pixi;
+    manifestPath: string;
+    projectDir: string;
+    envName?: string;
+};
+
+export async function getPixiEnvironmentFromInterpreter(
+    interpreterPath: string,
+): Promise<PixiEnvironmentInfo | undefined> {
+    const envDir = getCondaEnvironmentFromInterpreterPath(interpreterPath);
+    const envsDir = path.dirname(envDir);
+    const envName = path.basename(envDir);
+    const pixiDir = path.dirname(envsDir);
+    const projectDir = path.dirname(pixiDir);
+    const manifestPath = path.join(projectDir, 'pixi.toml');
+
+    if (!(await pathExists(manifestPath))) {
+        return undefined;
+    }
+
+    const pixi = await Pixi.getPixi(projectDir);
+    if (!pixi) {
+        return undefined;
+    }
+
+    return {
+        interpreterPath,
+        manifestPath,
+        projectDir,
+        envName,
+        pixi,
+    };
+}
+
+/**
+ * Returns true if the given environment name is not the default environment.
+ */
+export function isNonDefaultPixiEnvironmentName(envName?: string): envName is string {
+    return envName !== undefined && envName !== 'default';
 }

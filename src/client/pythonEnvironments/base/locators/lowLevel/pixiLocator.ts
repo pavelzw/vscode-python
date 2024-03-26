@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+import * as path from 'path';
 import { asyncFilter } from '../../../../common/utils/arrayUtils';
 import { chain, iterable } from '../../../../common/utils/async';
 import { traceError, traceVerbose } from '../../../../logging';
@@ -9,7 +10,7 @@ import { Pixi } from '../../../common/environmentManagers/pixi';
 import { pathExists } from '../../../common/externalDependencies';
 import { PythonEnvKind } from '../../info';
 import { IPythonEnvsIterator, BasicEnvInfo } from '../../locator';
-import { LazyResourceBasedLocator } from '../common/resourceBasedLocator';
+import { FSWatcherKind, FSWatchingLocator } from './fsWatchingLocator';
 
 /**
  * Returns all virtual environment locations to look for in a workspace.
@@ -20,11 +21,27 @@ async function getVirtualEnvDirs(root: string): Promise<string[]> {
     return asyncFilter(envDirs, pathExists);
 }
 
-export class PixiLocator extends LazyResourceBasedLocator {
+/**
+ * Returns all virtual environment locations to look for in a workspace.
+ */
+function getVirtualEnvRootDirs(root: string): string[] {
+    return [path.join(path.join(root, '.pixi'), 'envs')];
+}
+
+export class PixiLocator extends FSWatchingLocator {
     public readonly providerId: string = 'pixi';
 
     public constructor(private readonly root: string) {
-        super();
+        super(
+            async () => getVirtualEnvRootDirs(this.root),
+            async () => PythonEnvKind.Pixi,
+            {
+                // Note detecting kind of virtual env depends on the file structure around the
+                // executable, so we need to wait before attempting to detect it.
+                delayOnCreated: 1000,
+            },
+            FSWatcherKind.Workspace,
+        );
     }
 
     protected doIterEnvs(): IPythonEnvsIterator<BasicEnvInfo> {
