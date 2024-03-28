@@ -68,8 +68,10 @@ export class PixiInstaller extends ModuleInstaller {
         const execPath = pixiEnv?.pixi.command;
 
         let args = ['add', moduleName];
-        if (pixiEnv?.manifestPath) {
-            args = args.concat(['--manifest-path', pixiEnv?.manifestPath]);
+        // eslint-disable-next-line camelcase
+        const manifestPath = pixiEnv?.projectInfo.manifest_path;
+        if (manifestPath !== undefined) {
+            args = args.concat(['--manifest-path', manifestPath]);
         }
 
         return {

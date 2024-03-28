@@ -80,6 +80,11 @@ export class PythonExecutionFactory implements IPythonExecutionFactory {
         }
         const processService: IProcessService = await this.processServiceFactory.create(options.resource);
 
+        const pixiExecutionService = await this.createPixiExecutionService(pythonPath, processService);
+        if (pixiExecutionService) {
+            return pixiExecutionService;
+        }
+
         const condaExecutionService = await this.createCondaExecutionService(pythonPath, processService);
         if (condaExecutionService) {
             return condaExecutionService;

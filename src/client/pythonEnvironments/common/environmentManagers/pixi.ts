@@ -8,7 +8,7 @@ import { OSType, getOSType, getUserHomeDir } from '../../../common/utils/platfor
 import { exec, getPythonSetting, isParentPath, pathExists, pathExistsSync } from '../externalDependencies';
 import { cache } from '../../../common/utils/decorators';
 import { isTestExecution } from '../../../common/constants';
-import { traceError, traceVerbose } from '../../../logging';
+import { traceError, traceVerbose, traceWarn } from '../../../logging';
 import { OUTPUT_MARKER_SCRIPT } from '../../../common/process/internal/scripts';
 
 // This type corresponds to the output of 'pixi info --json', and property
@@ -21,12 +21,7 @@ export type PixiInfo = {
     cache_size?: number; // eslint-disable-line camelcase
     auth_dir: string; // eslint-disable-line camelcase
 
-    project_info?: /* eslint-disable-line camelcase */ {
-        manifest_path: string; // eslint-disable-line camelcase
-        last_updated: string; // eslint-disable-line camelcase
-        pixi_folder_size?: number; // eslint-disable-line camelcase
-        version: string;
-    };
+    project_info?: PixiProjectInfo /* eslint-disable-line camelcase */;
 
     environments_info: /* eslint-disable-line camelcase */ {
         name: string;
@@ -38,6 +33,13 @@ export type PixiInfo = {
         channels: string[];
         prefix: string;
     }[];
+};
+
+export type PixiProjectInfo = {
+    manifest_path: string; // eslint-disable-line camelcase
+    last_updated: string; // eslint-disable-line camelcase
+    pixi_folder_size?: number; // eslint-disable-line camelcase
+    version: string;
 };
 
 export async function isPixiEnvironment(interpreterPath: string): Promise<boolean> {
@@ -180,7 +182,14 @@ export class Pixi {
      * so pass in cwd on which we need to cache.
      */
     @cache(30_000, true, 10_000)
-    private async getEnvListCached(_cwd: string): Promise<string[] | undefined> {
+    private async getEnvListCached(cwd: string): Promise<string[] | undefined> {
+        const pixiInfo = await this.getPixiInfo(cwd);
+        // eslint-disable-next-line camelcase
+        return pixiInfo?.environments_info.map((env) => env.prefix);
+    }
+
+    @cache(1_000, true, 1_000)
+    public async getPixiInfo(_cwd: string): Promise<PixiInfo | undefined> {
         const infoOutput = await exec(this.command, ['info', '--json'], {
             cwd: this.cwd,
             throwOnStdErr: false,
@@ -190,7 +199,7 @@ export class Pixi {
         }
 
         const pixiInfo: PixiInfo = JSON.parse(infoOutput.stdout);
-        return pixiInfo.environments_info.map((env) => env.prefix);
+        return pixiInfo;
     }
 
     public getRunPythonArgs(manifestPath: string, envName?: string, isolatedFlag = false): string[] {
@@ -213,7 +222,6 @@ export class Pixi {
  *
  * @param interpreterPath Absolute path to any python interpreter.
  * @param folder Absolute path to the folder.
- * @param poetryPath Poetry command to use to calculate the result.
  */
 export async function isPixiEnvironmentRelatedToFolder(interpreterPath: string, folder: string): Promise<boolean> {
     const projectPath = getPixiProjectFolderFromInterpreter(interpreterPath);
@@ -223,7 +231,8 @@ export async function isPixiEnvironmentRelatedToFolder(interpreterPath: string, 
 export type PixiEnvironmentInfo = {
     interpreterPath: string;
     pixi: Pixi;
-    manifestPath: string;
+    pixiVersion: string;
+    projectInfo: PixiProjectInfo;
     projectDir: string;
     envName?: string;
 };
@@ -236,20 +245,25 @@ export async function getPixiEnvironmentFromInterpreter(
     const envName = path.basename(envDir);
     const pixiDir = path.dirname(envsDir);
     const projectDir = path.dirname(pixiDir);
-    const manifestPath = path.join(projectDir, 'pixi.toml');
 
-    if (!(await pathExists(manifestPath))) {
+    // Find the pixi executable for the project
+    const pixi = await Pixi.getPixi(projectDir);
+    if (!pixi) {
+        traceWarn(`could not find a pixi interpreter for the interpreter at ${interpreterPath}`);
         return undefined;
     }
 
-    const pixi = await Pixi.getPixi(projectDir);
-    if (!pixi) {
+    // Invoke pixi to get information about the pixi project
+    const pixiInfo = await pixi.getPixiInfo(projectDir);
+    if (!pixiInfo || !pixiInfo.project_info) {
+        traceWarn(`failed to determine pixi project information for the interpreter at ${interpreterPath}`);
         return undefined;
     }
 
     return {
         interpreterPath,
-        manifestPath,
+        pixiVersion: pixiInfo.version,
+        projectInfo: pixiInfo.project_info,
         projectDir,
         envName,
         pixi,
@@ -257,7 +271,7 @@ export async function getPixiEnvironmentFromInterpreter(
 }
 
 /**
- * Returns true if the given environment name is not the default environment.
+ * Returns true if the given environment name is *not* the default environment.
  */
 export function isNonDefaultPixiEnvironmentName(envName?: string): envName is string {
     return envName !== undefined && envName !== 'default';

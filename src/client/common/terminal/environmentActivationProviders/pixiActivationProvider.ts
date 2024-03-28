@@ -46,7 +46,7 @@ export class PixiActivationCommandProvider implements ITerminalActivationCommand
             return undefined;
         }
 
-        const command = ['shell-hook', '--manifest-path', pixiEnv.manifestPath];
+        const command = ['shell-hook', '--manifest-path', pixiEnv.projectInfo.manifest_path];
         if (isNonDefaultPixiEnvironmentName(pixiEnv.envName)) {
             command.push('--environment');
             command.push(pixiEnv.envName);
