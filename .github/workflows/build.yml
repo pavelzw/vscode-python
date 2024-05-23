@@ -45,7 +45,7 @@ jobs:
   build-vsix:
     name: Create VSIX
     # if: github.repository == 'microsoft/vscode-python'
-    needs: setup
+    # needs: setup
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -55,8 +55,10 @@ jobs:
         uses: ./.github/actions/build-vsix
         with:
           node_version: ${{ env.NODE_VERSION }}
-          vsix_name: ${{ needs.setup.outputs.vsix_name }}
-          artifact_name: ${{ needs.setup.outputs.vsix_artifact_name }}
+          vsix_name: ms-python-insiders.vsix
+          artifact_name: ms-python-insiders-vsix
+        #   vsix_name: ${{ needs.setup.outputs.vsix_name }}
+        #   artifact_name: ${{ needs.setup.outputs.vsix_artifact_name }}
 
   lint:
     name: Lint
