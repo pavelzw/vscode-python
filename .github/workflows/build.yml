@@ -2,11 +2,11 @@ name: Build
 
 on:
   push:
-    branches:
-      - 'main'
-      - 'release'
-      - 'release/*'
-      - 'release-*'
+    # branches:
+    #   - 'main'
+    #   - 'release'
+    #   - 'release/*'
+    #   - 'release-*'
 
 env:
   NODE_VERSION: 18.17.1
@@ -44,7 +44,7 @@ jobs:
 
   build-vsix:
     name: Create VSIX
-    if: github.repository == 'microsoft/vscode-python'
+    # if: github.repository == 'microsoft/vscode-python'
     needs: setup
     runs-on: ubuntu-latest
     steps:
